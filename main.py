@@ -79,6 +79,108 @@ def simple_status():
     """Simple JSON status for Agent Zero (non-streaming)"""
     return {"status": "active", "service": "dxf-generator", "ready": True}
 
+@app.route("/mcp", methods=["POST"])
+def mcp_endpoint():
+    """MCP JSON-RPC endpoint for Agent Zero"""
+    try:
+        data = request.get_json()
+        
+        # Handle MCP initialize request
+        if data.get("method") == "initialize":
+            return {
+                "jsonrpc": "2.0",
+                "id": data.get("id"),
+                "result": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {
+                        "tools": {
+                            "listChanged": True
+                        }
+                    },
+                    "serverInfo": {
+                        "name": "dxf-generator",
+                        "version": "1.0.0"
+                    }
+                }
+            }
+        
+        # Handle tools/list request
+        elif data.get("method") == "tools/list":
+            return {
+                "jsonrpc": "2.0", 
+                "id": data.get("id"),
+                "result": {
+                    "tools": [
+                        {
+                            "name": "generate_dxf",
+                            "description": "Genera archivos DXF arquitectónicos desde descripciones de texto",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "prompt": {
+                                        "type": "string",
+                                        "description": "Descripción del plano arquitectónico"
+                                    }
+                                },
+                                "required": ["prompt"]
+                            }
+                        }
+                    ]
+                }
+            }
+        
+        # Handle tools/call request
+        elif data.get("method") == "tools/call":
+            params = data.get("params", {})
+            if params.get("name") == "generate_dxf":
+                arguments = params.get("arguments", {})
+                prompt = arguments.get("prompt", "")
+                
+                # Generate DXF file
+                file_id = uuid.uuid4().hex
+                filename = f"{file_id}_{prompt.replace(' ', '_')[:30]}.dxf"
+                
+                doc = ezdxf.new()
+                draw_architectural_plan(doc, prompt)
+                
+                file_path = os.path.join("uploads", filename)
+                doc.saveas(file_path)
+                
+                download_url = f"/download/{filename}"
+                
+                return {
+                    "jsonrpc": "2.0",
+                    "id": data.get("id"),
+                    "result": {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": f"✅ Archivo DXF generado exitosamente!\n📁 Archivo: {filename}\n🔗 URL de descarga: {download_url}\n📝 Basado en: {prompt}"
+                            }
+                        ]
+                    }
+                }
+        
+        # Default response for unknown methods
+        return {
+            "jsonrpc": "2.0",
+            "id": data.get("id"),
+            "error": {
+                "code": -32601,
+                "message": "Method not found"
+            }
+        }
+        
+    except Exception as e:
+        return {
+            "jsonrpc": "2.0", 
+            "id": data.get("id") if data else None,
+            "error": {
+                "code": -32603,
+                "message": f"Internal error: {str(e)}"
+            }
+        }
+
 
 @app.route("/download/<filename>")
 def download_file(filename):
