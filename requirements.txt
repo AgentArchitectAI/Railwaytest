@@ -1,7 +1,5 @@
-# Original dependencies
+# Simple dependencies for Railway deployment
 Flask
 ezdxf
-appwrite
 
-# MCP dependencies for Agent Zero integration
-mcp>=1.0.0
+# No external storage needed - using local file serving
