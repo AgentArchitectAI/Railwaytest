@@ -19,6 +19,23 @@ def draw_architectural_plan(doc, prompt_text):
     ], dxfattribs={"closed": True})
     msp.add_text(prompt_text, dxfattribs={'height': 250, 'layer': 'TEXT'}).set_pos((100, 3800), align='LEFT')
 
+@app.route("/", methods=["GET"])
+def service_info():
+    """GET endpoint for Agent Zero to verify service status"""
+    return {
+        "service": "DXF Generator",
+        "status": "active",
+        "description": "Genera archivos DXF arquitectónicos desde descripciones de texto",
+        "endpoint": "/",
+        "method": "POST",
+        "required_fields": ["prompt"],
+        "response_type": "text/event-stream",
+        "example": {
+            "prompt": "casa con 2 puertas y 3 ventanas"
+        },
+        "version": "1.0"
+    }
+
 @app.route("/", methods=["POST"])
 def generate_dxf():
     def event_stream():
@@ -53,6 +70,12 @@ def generate_dxf():
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
     return Response(stream_with_context(event_stream()), content_type="text/event-stream")
+
+
+@app.route("/health", methods=["GET"])
+def health_check():
+    """Health check endpoint for Agent Zero"""
+    return {"status": "healthy", "service": "dxf-generator"}
 
 
 @app.route("/download/<filename>")
