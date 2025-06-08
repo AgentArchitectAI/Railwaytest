@@ -21,13 +21,18 @@ def draw_architectural_plan(doc, prompt_text):
 
 @app.route("/", methods=["GET"])
 def service_info():
-    """GET endpoint for Agent Zero to verify service status - returns SSE format"""
-    def info_stream():
-        yield "data: {\"service\": \"DXF Generator\", \"status\": \"active\"}\n\n"
-        yield "data: {\"description\": \"Genera archivos DXF arquitectónicos\"}\n\n"
-        yield "data: {\"ready\": true, \"version\": \"1.0\"}\n\n"
-    
-    return Response(info_stream(), content_type="text/event-stream")
+    """GET endpoint for Agent Zero - returns JSON-RPC format"""
+    return {
+        "jsonrpc": "2.0",
+        "id": "status",
+        "result": {
+            "service": "DXF Generator",
+            "status": "active", 
+            "description": "Genera archivos DXF arquitectónicos",
+            "ready": True,
+            "version": "1.0"
+        }
+    }
 
 @app.route("/", methods=["POST"])
 def generate_dxf():
@@ -67,17 +72,30 @@ def generate_dxf():
 
 @app.route("/health", methods=["GET"])
 def health_check():
-    """Health check endpoint for Agent Zero - returns SSE format"""
-    def health_stream():
-        yield "data: {\"status\": \"healthy\", \"service\": \"dxf-generator\"}\n\n"
-    
-    return Response(health_stream(), content_type="text/event-stream")
+    """Health check endpoint for Agent Zero - returns JSON-RPC format"""
+    return {
+        "jsonrpc": "2.0",
+        "id": "health",
+        "result": {
+            "status": "healthy",
+            "service": "dxf-generator",
+            "ready": True
+        }
+    }
 
 
 @app.route("/status", methods=["GET"])
 def simple_status():
-    """Simple JSON status for Agent Zero (non-streaming)"""
-    return {"status": "active", "service": "dxf-generator", "ready": True}
+    """Simple JSON status for Agent Zero - JSON-RPC format"""
+    return {
+        "jsonrpc": "2.0",
+        "id": "simple_status", 
+        "result": {
+            "status": "active",
+            "service": "dxf-generator", 
+            "ready": True
+        }
+    }
 
 @app.route("/mcp", methods=["POST"])
 def mcp_endpoint():
