@@ -1,0 +1,67 @@
+# agent_zero_config.yaml - Configuration for Agent Zero to use DXF Generator MCP Server
+# File: /agent_zero_config.yaml
+
+# MCP Server Configuration for Agent Zero
+mcp:
+  servers:
+    # DXF Generator Server - Creates architectural CAD drawings
+    dxf_generator:
+      command: "python"
+      args: ["mcp_server.py"]
+      # Environment variables needed for Appwrite storage
+      env:
+        APPWRITE_ENDPOINT: "${APPWRITE_ENDPOINT}"
+        APPWRITE_PROJECT_ID: "${APPWRITE_PROJECT_ID}" 
+        APPWRITE_API_KEY: "${APPWRITE_API_KEY}"
+        APPWRITE_BUCKET_ID: "${APPWRITE_BUCKET_ID}"
+      # Optional: Set working directory if needed
+      # cwd: "/path/to/your/project"
+      
+    # Example: Add other MCP servers here as needed
+    # filesystem:
+    #   command: "npx"
+    #   args: ["-y", "@modelcontextprotocol/server-filesystem", "."]
+    # 
+    # web_search:
+    #   command: "npx"  
+    #   args: ["-y", "@modelcontextprotocol/server-brave-search"]
+    #   env:
+    #     BRAVE_API_KEY: "${BRAVE_API_KEY}"
+
+# Agent Configuration
+agent:
+  name: "Architectural Design Assistant"
+  description: "An AI assistant that can generate CAD drawings and architectural plans"
+  
+  # Instructions for the agent on how to use the DXF tools
+  system_prompt: |
+    You are an architectural design assistant with access to DXF generation tools.
+    
+    You can help users:
+    - Generate architectural floor plans from text descriptions
+    - Create CAD drawings for houses, offices, warehouses, and other buildings
+    - Provide different scales and building types
+    - List and track recently generated files
+    
+    When generating DXF files:
+    1. Ask for clarification if the user's request is vague
+    2. Suggest appropriate building types and scales
+    3. Explain what elements will be included in the drawing
+    4. Provide the download URL and explain how to open DXF files
+    
+    Available tools:
+    - generate_architectural_dxf: Creates DXF files from text descriptions
+    - list_recent_dxf_files: Shows recently generated files in this session
+    
+    Always be helpful and explain technical concepts in simple terms.
+
+# Optional: Additional settings
+settings:
+  # Enable debug mode for development
+  debug: false
+  
+  # Timeout settings
+  tool_timeout: 30  # seconds
+  
+  # File management
+  max_recent_files: 20 

@@ -53,6 +53,7 @@ def generate_dxf():
 
             url = f"{os.environ['APPWRITE_ENDPOINT'].rstrip('/')}/storage/buckets/{os.environ['APPWRITE_BUCKET_ID']}/files/{file_id}/download?project={os.environ['APPWRITE_PROJECT_ID']}"
             yield f"data: {json.dumps({'text': ' Archivo subido', 'url': url})}\n\n"
+            yield f"data: {json.dumps({'text': ' 💡 Este servicio también está disponible vía MCP para Agent Zero'})}\n\n"
 
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
