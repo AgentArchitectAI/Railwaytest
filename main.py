@@ -6,9 +6,9 @@ import json
 
 app = Flask(__name__)
 
-# Create uploads directory for storing DXF files
+
 os.makedirs("uploads", exist_ok=True)
-print("✅ Railway deployment ready - no external dependencies needed!")
+print(" Railway deployment ready - no external dependencies needed!")
 
 
 
@@ -50,23 +50,19 @@ def generate_dxf():
             prompt = data["prompt"]
             yield f"data: {json.dumps({'text': f' Recibido: {prompt}'})}\n\n"
 
-            # Generate unique filename
             file_id = uuid.uuid4().hex
             filename = f"{file_id}_{prompt.replace(' ', '_')[:30]}.dxf"
             
-            # Create DXF file
             doc = ezdxf.new()
             draw_architectural_plan(doc, prompt)
 
-            # Save to uploads directory
-            file_path = os.path.join("uploads", filename)
++            file_path = os.path.join("uploads", filename)
             doc.saveas(file_path)
             yield f"data: {json.dumps({'text': ' DXF generado'})}\n\n"
 
-            # Create download URL (Railway will serve this)
             download_url = f"/download/{filename}"
             yield f"data: {json.dumps({'text': ' Archivo listo', 'url': download_url})}\n\n"
-            yield f"data: {json.dumps({'text': ' ✅ Archivo disponible para descarga'})}\n\n"
+            yield f"data: {json.dumps({'text': '  Archivo disponible para descarga'})}\n\n"
 
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
@@ -108,25 +104,22 @@ def simple_status():
         yield f"data: {json.dumps(response_data)}\n\n"
     
     return Response(simple_stream(), content_type="text/event-stream")
-
 @app.route("/mcp", methods=["POST"])
 def mcp_endpoint():
-    """MCP JSON-RPC endpoint for Agent Zero"""
     def mcp_stream():
+        data = None
         try:
-            data = request.get_json()
-            
-            # Handle MCP initialize request
-            if data.get("method") == "initialize":
+            data = request.get_json(force=True)
+            method = data.get("method")
+
+            if method == "initialize":
                 response_data = {
                     "jsonrpc": "2.0",
                     "id": data.get("id"),
                     "result": {
                         "protocolVersion": "2024-11-05",
                         "capabilities": {
-                            "tools": {
-                                "listChanged": True
-                            }
+                            "tools": {"listChanged": True}
                         },
                         "serverInfo": {
                             "name": "dxf-generator",
@@ -135,11 +128,10 @@ def mcp_endpoint():
                     }
                 }
                 yield f"data: {json.dumps(response_data)}\n\n"
-            
-            # Handle tools/list request
-            elif data.get("method") == "tools/list":
+
+            elif method == "tools/list":
                 response_data = {
-                    "jsonrpc": "2.0", 
+                    "jsonrpc": "2.0",
                     "id": data.get("id"),
                     "result": {
                         "tools": [
@@ -161,26 +153,24 @@ def mcp_endpoint():
                     }
                 }
                 yield f"data: {json.dumps(response_data)}\n\n"
-            
-            # Handle tools/call request
-            elif data.get("method") == "tools/call":
+
+            elif method == "tools/call":
                 params = data.get("params", {})
                 if params.get("name") == "generate_dxf":
                     arguments = params.get("arguments", {})
                     prompt = arguments.get("prompt", "")
-                    
-                    # Generate DXF file
+
                     file_id = uuid.uuid4().hex
                     filename = f"{file_id}_{prompt.replace(' ', '_')[:30]}.dxf"
-                    
+
                     doc = ezdxf.new()
                     draw_architectural_plan(doc, prompt)
-                    
+
                     file_path = os.path.join("uploads", filename)
                     doc.saveas(file_path)
-                    
+
                     download_url = f"/download/{filename}"
-                    
+
                     response_data = {
                         "jsonrpc": "2.0",
                         "id": data.get("id"),
@@ -188,14 +178,13 @@ def mcp_endpoint():
                             "content": [
                                 {
                                     "type": "text",
-                                    "text": f"✅ Archivo DXF generado exitosamente!\n📁 Archivo: {filename}\n🔗 URL de descarga: {download_url}\n📝 Basado en: {prompt}"
+                                    "text": f" DXF generado con éxito\n📁 Archivo: {filename}\n🔗 URL: {download_url}"
                                 }
                             ]
                         }
                     }
                     yield f"data: {json.dumps(response_data)}\n\n"
-            
-            # Default response for unknown methods
+
             else:
                 response_data = {
                     "jsonrpc": "2.0",
@@ -206,10 +195,10 @@ def mcp_endpoint():
                     }
                 }
                 yield f"data: {json.dumps(response_data)}\n\n"
-                
+
         except Exception as e:
             error_data = {
-                "jsonrpc": "2.0", 
+                "jsonrpc": "2.0",
                 "id": data.get("id") if data else None,
                 "error": {
                     "code": -32603,
@@ -217,8 +206,8 @@ def mcp_endpoint():
                 }
             }
             yield f"data: {json.dumps(error_data)}\n\n"
-    
-    return Response(mcp_stream(), content_type="text/event-stream")
+
+    return Response(stream_with_context(mcp_stream()), content_type="text/event-stream")
 
 
 @app.route("/download/<filename>")
@@ -235,6 +224,5 @@ def download_file(filename):
 
 
 if __name__ == "__main__":
-    # Use Railway's PORT environment variable if available, otherwise default to 80
     port = int(os.environ.get("PORT", 80))
     app.run(host="0.0.0.0", port=port)
