@@ -21,20 +21,13 @@ def draw_architectural_plan(doc, prompt_text):
 
 @app.route("/", methods=["GET"])
 def service_info():
-    """GET endpoint for Agent Zero to verify service status"""
-    return {
-        "service": "DXF Generator",
-        "status": "active",
-        "description": "Genera archivos DXF arquitectónicos desde descripciones de texto",
-        "endpoint": "/",
-        "method": "POST",
-        "required_fields": ["prompt"],
-        "response_type": "text/event-stream",
-        "example": {
-            "prompt": "casa con 2 puertas y 3 ventanas"
-        },
-        "version": "1.0"
-    }
+    """GET endpoint for Agent Zero to verify service status - returns SSE format"""
+    def info_stream():
+        yield "data: {\"service\": \"DXF Generator\", \"status\": \"active\"}\n\n"
+        yield "data: {\"description\": \"Genera archivos DXF arquitectónicos\"}\n\n"
+        yield "data: {\"ready\": true, \"version\": \"1.0\"}\n\n"
+    
+    return Response(info_stream(), content_type="text/event-stream")
 
 @app.route("/", methods=["POST"])
 def generate_dxf():
@@ -74,8 +67,17 @@ def generate_dxf():
 
 @app.route("/health", methods=["GET"])
 def health_check():
-    """Health check endpoint for Agent Zero"""
-    return {"status": "healthy", "service": "dxf-generator"}
+    """Health check endpoint for Agent Zero - returns SSE format"""
+    def health_stream():
+        yield "data: {\"status\": \"healthy\", \"service\": \"dxf-generator\"}\n\n"
+    
+    return Response(health_stream(), content_type="text/event-stream")
+
+
+@app.route("/status", methods=["GET"])
+def simple_status():
+    """Simple JSON status for Agent Zero (non-streaming)"""
+    return {"status": "active", "service": "dxf-generator", "ready": True}
 
 
 @app.route("/download/<filename>")
