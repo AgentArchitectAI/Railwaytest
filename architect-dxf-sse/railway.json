@@ -1,7 +1,5 @@
 {
   "build": {
-    "dockerfilePath": "Dockerfile",
-    "buildCommand": null,
-    "startCommand": null
+    "builder": "docker"
   }
 }
